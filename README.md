@@ -71,7 +71,7 @@ testing.
 | PineScript v6 | TradingView users who want the original chart indicator | [Open on TradingView](https://www.tradingview.com/script/WhBzgfDu-Machine-Learning-Lorentzian-Classification/) |
 | MQL5 | MetaTrader 5 users who want the indicator plus a Strategy Tester EA | [`ports/mql5/`](ports/mql5/) |
 | Python | Research workflows, CSV exports, notebooks, and the quickest local smoke test | [`ports/python/`](ports/python/) |
-| Rust | Fast local testing, dependency-light library usage, and performance-focused experiments | [`ports/rust/`](ports/rust/) or `cargo add lorentzian-classification-core` |
+| Rust | Fast local testing, dependency-light library usage, and performance-focused experiments | [`lorentzian-classification-core` 0.1.0](https://crates.io/crates/lorentzian-classification-core) or [`ports/rust/`](ports/rust/) |
 | Lean 4 | An executable formal specification with stated and tested invariants | [`ports/lean/`](ports/lean/) |
 
 Need another ecosystem? [Request a new port](https://github.com/artificial-intelligence-edge/lorentzian-classification/issues/new?template=port-request.yml).
@@ -108,6 +108,8 @@ workflows, see [`docs/examples.md`](docs/examples.md).
 | Explore optimizer studies | [AI Edge Optimizer](https://optimizer.ai-edge.io/studies) |
 | Reproduce validation | [`docs/validation.md`](docs/validation.md) |
 | Run the examples | [`docs/examples.md`](docs/examples.md) |
+| Use the Rust library | [`lorentzian-classification-core` on crates.io](https://crates.io/crates/lorentzian-classification-core) and [API docs](https://docs.rs/lorentzian-classification-core) |
+| Install the Rust CLI | [`lorentzian-classification-cli` on crates.io](https://crates.io/crates/lorentzian-classification-cli) |
 | Request another port | [New port request](https://github.com/artificial-intelligence-edge/lorentzian-classification/issues/new?template=port-request.yml) |
 
 ## What is in this repo
@@ -116,7 +118,7 @@ workflows, see [`docs/examples.md`](docs/examples.md).
 | --- | --- |
 | [`ports/pinescript/`](ports/pinescript/) | The SHA-pinned original TradingView indicator that everything else is checked against |
 | [`ports/python/`](ports/python/) | Python CLI and library port; reproduces the gold baselines (the TradingView CSV exports we treat as ground truth) with exact signals and feature/kernel tolerance |
-| [`ports/rust/`](ports/rust/) | Rust core library and CLI; bit-exact with the Python port |
+| [`ports/rust/`](ports/rust/) | Rust core library, canonical alias, and CLI; published on crates.io and bit-exact with the Python port |
 | [`ports/lean/`](ports/lean/) | Lean 4 executable formal specification with proved structural invariants; byte-identical output to the Rust port |
 | [`ports/mql5/`](ports/mql5/) | MetaTrader 5 indicator and Expert Advisor wrapper |
 | [`docs/`](docs/) | Validation policy and copy-pasteable cross-port usage examples ([`docs/examples.md`](docs/examples.md)) |
@@ -133,7 +135,7 @@ verify the repo-runnable ports.
 | --- | --- |
 | PineScript | Manifest-pinned source files and libraries; fixture checks fail if the local reference drifts. |
 | Python | Matches every tracked TradingView gold baseline under the shared feature/kernel/signal contract; strict non-default coverage is still expanding. |
-| Rust | Recomputes the same baselines and is bit-exact with the Python port. |
+| Rust | Recomputes all four baselines, is bit-exact with the Python port, and is published as verified crates.io libraries and a CLI. |
 | Lean 4 | Builds as an executable formal specification, passes theorem-named property tests, and is byte-identical to Rust on the committed baselines. |
 | MQL5 | Ships as a MetaTrader 5 indicator plus EA; validation is documented in the port because it runs inside MT5 rather than the repo CSV harness. |
 
