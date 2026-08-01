@@ -4,23 +4,35 @@
 //! features/kernel, exact for prediction/direction/buy/sell/stops) used by the
 //! Python parity suite. Because the Python port is already proven equal to these
 //! Pine exports, passing here establishes Rust == Pine == Python transitively.
+//!
+//! One gold baseline is vendored into the crate (`tests/data/`), so the
+//! published package remains parity-testable outside the monorepo. The larger
+//! baselines live at the repository root and their tests skip gracefully when
+//! that root is absent (i.e. when running from an extracted crates.io package).
 
 use std::path::{Path, PathBuf};
 
 use lorentzian_classification_core::{calculate, parity_summary, read_pine_export, Settings};
 
-/// Repository root, derived from this crate's manifest directory
-/// (`<repo>/ports/rust/lorentzian-classification-core`).
-fn repo_root() -> PathBuf {
+/// The gold baseline vendored into the crate so the packaged crate stays
+/// self-contained.
+const VENDORED_BASELINE: &str = "pine_btcusd_h1_trimmed_limited_history.csv";
+
+fn vendored_baseline() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(3)
-        .expect("repo root is three levels above the core crate")
-        .to_path_buf()
+        .join("tests/data")
+        .join(VENDORED_BASELINE)
 }
 
-fn baseline(filename: &str) -> PathBuf {
-    repo_root().join("tests/parity/baselines").join(filename)
+/// Full monorepo baseline path (`<repo>/tests/parity/baselines/<filename>`),
+/// or `None` when running outside the monorepo (extracted package).
+fn repo_baseline(filename: &str) -> Option<PathBuf> {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(3)?
+        .join("tests/parity/baselines")
+        .join(filename);
+    path.exists().then_some(path)
 }
 
 fn temp_csv(name: &str) -> PathBuf {
@@ -31,15 +43,12 @@ fn temp_csv(name: &str) -> PathBuf {
 }
 
 /// Runs the parity comparison for one baseline and asserts an exact pass.
-fn assert_baseline_parity(filename: &str, include_full_history: bool) {
-    let path = baseline(filename);
-    assert!(
-        path.exists(),
-        "missing baseline fixture: {}",
-        path.display()
-    );
-
-    let (bars, expected, price_scale) = read_pine_export(&path).expect("baseline CSV should parse");
+fn assert_baseline_parity(path: &Path, include_full_history: bool) {
+    let filename = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let (bars, expected, price_scale) = read_pine_export(path).expect("baseline CSV should parse");
     let settings = Settings {
         include_full_history,
         ..Settings::default()
@@ -66,24 +75,52 @@ fn assert_baseline_parity(filename: &str, include_full_history: bool) {
     assert!(summary.compared > 0, "{filename}: nothing was compared");
 }
 
+/// Runs a monorepo-only baseline, skipping when the repo root is absent.
+fn assert_repo_baseline_parity(filename: &str, include_full_history: bool) {
+    let Some(path) = repo_baseline(filename) else {
+        eprintln!("skipping {filename}: monorepo gold baseline not present in the packaged crate");
+        return;
+    };
+    assert_baseline_parity(&path, include_full_history);
+}
+
 #[test]
 fn oanda_eurusd_daily_full_history() {
-    assert_baseline_parity("pine_oanda_eurusd_1d_full_history.csv", true);
+    assert_repo_baseline_parity("pine_oanda_eurusd_1d_full_history.csv", true);
 }
 
 #[test]
 fn tastyfx_eurusd_daily_full_history() {
-    assert_baseline_parity("pine_tastyfx_eurusd_1d_full_history.csv", true);
+    assert_repo_baseline_parity("pine_tastyfx_eurusd_1d_full_history.csv", true);
 }
 
 #[test]
 fn coinbase_btcusd_daily_limited_history() {
-    assert_baseline_parity("pine_coinbase_btcusd_1d_limited_history.csv", false);
+    assert_repo_baseline_parity("pine_coinbase_btcusd_1d_limited_history.csv", false);
 }
 
 #[test]
 fn btcusd_h1_trimmed_limited_history() {
-    assert_baseline_parity("pine_btcusd_h1_trimmed_limited_history.csv", false);
+    // Vendored fixture: always present, including in the extracted package.
+    assert_baseline_parity(&vendored_baseline(), false);
+}
+
+/// The vendored fixture must stay byte-identical to the monorepo gold
+/// baseline it was copied from (skipped in the extracted package, where the
+/// monorepo copy is not available).
+#[test]
+fn vendored_fixture_matches_monorepo_baseline() {
+    let Some(repo) = repo_baseline(VENDORED_BASELINE) else {
+        eprintln!("skipping vendored-fixture drift check: monorepo baseline not present");
+        return;
+    };
+    let repo_bytes = std::fs::read(repo).expect("read monorepo baseline");
+    let vendored_bytes = std::fs::read(vendored_baseline()).expect("read vendored fixture");
+    assert!(
+        repo_bytes == vendored_bytes,
+        "vendored tests/data/{VENDORED_BASELINE} has drifted from \
+         tests/parity/baselines/{VENDORED_BASELINE}; re-copy the gold baseline"
+    );
 }
 
 /// Determinism: recomputing the same input yields identical results.
@@ -93,8 +130,8 @@ fn btcusd_h1_trimmed_limited_history() {
 /// identically) rather than `PartialEq`.
 #[test]
 fn recompute_is_deterministic() {
-    let path = baseline("pine_coinbase_btcusd_1d_limited_history.csv");
-    let (bars, _expected, price_scale) = read_pine_export(&path).expect("parse");
+    let (bars, _expected, price_scale) =
+        read_pine_export(&vendored_baseline()).expect("parse vendored baseline");
     let settings = Settings::default();
     let a = calculate(&bars, &settings, price_scale);
     let b = calculate(&bars, &settings, price_scale);

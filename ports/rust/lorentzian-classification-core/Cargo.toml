@@ -5,23 +5,48 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 authors.workspace = true
-description = "Bit-faithful Rust port of the Lorentzian Classification indicator core (no runtime dependencies)"
-readme = "../README.md"
+description = "Bit-faithful Rust port of the Lorentzian Classification indicator core, parity-tested against the PineScript reference"
+documentation = "https://docs.rs/lorentzian-classification-core"
+readme = "README.md"
 keywords = ["trading", "indicator", "machine-learning", "lorentzian", "pinescript"]
 categories = ["algorithms", "finance"]
+
+[package.metadata.docs.rs]
+all-features = true
 
 [lib]
 name = "lorentzian_classification_core"
 
-[dependencies]
-csv.workspace = true
+[features]
+# TradingView CSV input (`read_tradingview_csv`) and Pine-export parity
+# checking (the `parity` module). Disable default features for a
+# zero-dependency numeric core.
+default = ["csv"]
+csv = ["dep:csv"]
 
-# Runtime dependencies stay intentionally small. The CSV crate is used instead
-# of hand-rolled parsing so valid quoted CSV behaves like Python's stdlib csv.
+[dependencies]
+# The crate's only runtime dependency, optional and default-on. The CSV crate
+# is used instead of hand-rolled parsing so valid quoted CSV behaves like
+# Python's stdlib csv.
+csv = { workspace = true, optional = true }
+
 [dev-dependencies]
 criterion = { version = "0.5", default-features = false }
+
+# The parity suite, example, and bench all read Pine-export CSVs, so they
+# need the default `csv` feature. Declaring them keeps
+# `--no-default-features` builds working for the pure numeric core.
+[[test]]
+name = "parity"
+required-features = ["csv"]
+
+[[example]]
+name = "summary"
+required-features = ["csv"]
 
 [[bench]]
 name = "classification"
 harness = false
+required-features = ["csv"]

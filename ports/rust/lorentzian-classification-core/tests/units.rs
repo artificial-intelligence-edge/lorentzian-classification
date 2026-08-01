@@ -2,16 +2,14 @@
 //! banker's rounding in ADX quantization, decimal-scale detection, rescaling,
 //! and the moving-average warmup semantics.
 
-use std::fs;
-use std::path::PathBuf;
-
 use lorentzian_classification_core::csv_io::{decimal_count, detect_price_scale};
 use lorentzian_classification_core::indicators::{
     calc_rsi, ema, quant_sub, rescale, rma, sma, wilder_smooth,
 };
-use lorentzian_classification_core::{is_missing, read_tradingview_csv, RESULT_FIELDNAMES};
+use lorentzian_classification_core::{is_missing, RESULT_FIELDNAMES};
 
-fn temp_csv(name: &str) -> PathBuf {
+#[cfg(feature = "csv")]
+fn temp_csv(name: &str) -> std::path::PathBuf {
     std::env::temp_dir().join(format!(
         "lorentzian-rust-core-{}-{name}.csv",
         std::process::id()
@@ -76,17 +74,20 @@ fn result_fieldnames_track_python_schema_surface() {
     assert_eq!(*RESULT_FIELDNAMES.last().unwrap(), "Win Rate");
 }
 
+#[cfg(feature = "csv")]
 #[test]
 fn tradingview_reader_accepts_quoted_csv_cells_like_python() {
+    use lorentzian_classification_core::read_tradingview_csv;
+
     let path = temp_csv("quoted-input");
-    fs::write(
+    std::fs::write(
         &path,
         "time,open,high,low,close\n\"2026-01-01, 00:00\",1.2345,1.2400,1.2300,1.2350\n",
     )
     .unwrap();
 
     let (bars, price_scale) = read_tradingview_csv(&path).unwrap();
-    fs::remove_file(&path).unwrap();
+    std::fs::remove_file(&path).unwrap();
 
     assert_eq!(bars.len(), 1);
     assert_eq!(bars[0].time, "2026-01-01, 00:00");

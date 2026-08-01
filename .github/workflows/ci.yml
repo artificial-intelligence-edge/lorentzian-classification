@@ -41,10 +41,64 @@ jobs:
         run: cargo fmt --all --check
       - name: Clippy (warnings as errors)
         run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Clippy without default features (zero-dependency core)
+        run: cargo clippy -p lorentzian-classification-core --no-default-features --all-targets -- -D warnings
       - name: Build
         run: cargo build --workspace --release
       - name: Test (parity + units against committed gold baselines)
         run: cargo test --workspace --release
+      - name: Test without default features (zero-dependency core)
+        run: cargo test -p lorentzian-classification-core --no-default-features
+      - name: Docs (rustdoc warnings and missing docs denied)
+        run: RUSTDOCFLAGS='-D warnings -D missing_docs' cargo doc --workspace --no-deps
+
+  rust-msrv:
+    name: Rust MSRV (1.77, locked)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ports/rust
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install MSRV toolchain
+        run: rustup toolchain install 1.77 --profile minimal
+      - name: Cache cargo
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ports/rust/target
+          key: ${{ runner.os }}-cargo-msrv-${{ hashFiles('ports/rust/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-msrv-
+      - name: Check workspace on the MSRV with the committed lockfile
+        run: cargo +1.77 check --workspace --locked
+      - name: Check the zero-dependency core on the MSRV
+        run: cargo +1.77 check -p lorentzian-classification-core --no-default-features --locked
+
+  rust-package:
+    name: Rust package verify (self-contained crate)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ports/rust
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal
+      - name: Package the core crate
+        run: cargo package -p lorentzian-classification-core
+      - name: Test the extracted package outside the workspace
+        run: |
+          crate_file="$(ls target/package/lorentzian-classification-core-*.crate)"
+          tar -xzf "$crate_file" -C "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP"/lorentzian-classification-core-*/
+          cargo test
 
   python:
     name: Python port (baseline parity)

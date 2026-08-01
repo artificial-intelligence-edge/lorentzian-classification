@@ -21,9 +21,13 @@ pub struct ExpectedRow {
     pub prediction: i64,
     /// Exported integer direction.
     pub direction: i64,
+    /// Exported long-entry flag.
     pub buy: bool,
+    /// Exported short-entry flag.
     pub sell: bool,
+    /// Exported displayed long-exit flag.
     pub stop_buy: bool,
+    /// Exported displayed short-exit flag.
     pub stop_sell: bool,
 }
 
@@ -54,11 +58,19 @@ impl Mismatch {
 /// Aggregate result of a parity comparison.
 #[derive(Debug, Clone)]
 pub struct ParitySummary {
+    /// `true` when no mismatches were found.
     pub pass: bool,
+    /// Number of rows whose signal columns were compared (rows from
+    /// `max_bars_back_index` onward).
     pub compared: usize,
+    /// First row index where Pine emits predictions:
+    /// `max(0, last_bar_index - max_bars_back)`.
     pub max_bars_back_index: i64,
+    /// Largest absolute feature difference observed across compared cells.
     pub max_feature_diff: f64,
+    /// Largest absolute kernel-estimate difference observed.
     pub max_kernel_diff: f64,
+    /// Every column disagreement found, in row order.
     pub mismatches: Vec<Mismatch>,
 }
 

@@ -1,8 +1,8 @@
 //! Criterion benchmark for the end-to-end `calculate` pipeline.
 //!
-//! Run with `cargo bench`. Uses the committed COINBASE daily baseline when
-//! available, otherwise falls back to a synthetic series so the bench is
-//! self-contained.
+//! Run with `cargo bench`. Uses the gold baseline vendored into the crate
+//! (`tests/data/`), falling back to a synthetic series so the bench never
+//! depends on external files.
 
 use std::hint::black_box;
 use std::path::Path;
@@ -12,15 +12,9 @@ use lorentzian_classification_core::{calculate, read_pine_export, Bar, Settings}
 
 fn load_bars() -> Vec<Bar> {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(3)
-        .map(|root| {
-            root.join("tests/parity/baselines/pine_coinbase_btcusd_1d_limited_history.csv")
-        });
-    if let Some(path) = path {
-        if let Ok((bars, _expected, _scale)) = read_pine_export(&path) {
-            return bars;
-        }
+        .join("tests/data/pine_btcusd_h1_trimmed_limited_history.csv");
+    if let Ok((bars, _expected, _scale)) = read_pine_export(&path) {
+        return bars;
     }
     // Synthetic fallback: a gently trending, oscillating series.
     (0..2_000)

@@ -1,29 +1,50 @@
-//! Minimal TradingView/Pine OHLC CSV reader (standard library only).
+//! Minimal TradingView/Pine OHLC CSV reader.
 //!
 //! Reads the `time,open,high,low,close,...` export schema and derives the
 //! decimal `price_scale` used for ADX quantization, matching
 //! `read_tradingview_csv`/`detect_price_scale` in the Python reference.
+//! Parsing is delegated to the `csv` crate so valid quoted CSV behaves like
+//! Python's standard `csv` parser.
+//!
+//! The file reader requires the `csv` cargo feature (enabled by default).
+//! [`decimal_count`] and [`detect_price_scale`] are pure string helpers and
+//! stay available without it, so no-default-features consumers can still
+//! derive a price scale for their own data.
 
+#[cfg(feature = "csv")]
 use std::error::Error;
+#[cfg(feature = "csv")]
 use std::fmt;
+#[cfg(feature = "csv")]
 use std::path::Path;
 
+#[cfg(feature = "csv")]
 use crate::types::Bar;
 
 /// Errors returned while reading a TradingView CSV.
+#[cfg(feature = "csv")]
 #[derive(Debug)]
 pub enum CsvError {
+    /// The file could not be opened or read.
     Io(std::io::Error),
+    /// The CSV structure itself could not be parsed.
     Csv(csv::Error),
+    /// The file has no header row.
     Empty,
+    /// A required `time/open/high/low/close` column is absent.
     MissingColumn(&'static str),
+    /// A numeric cell failed to parse.
     ParseField {
+        /// 1-based line number of the offending record.
         line: usize,
+        /// Name of the column that failed to parse.
         column: &'static str,
+        /// The raw cell content.
         value: String,
     },
 }
 
+#[cfg(feature = "csv")]
 impl fmt::Display for CsvError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -43,6 +64,7 @@ impl fmt::Display for CsvError {
     }
 }
 
+#[cfg(feature = "csv")]
 impl Error for CsvError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
@@ -53,12 +75,14 @@ impl Error for CsvError {
     }
 }
 
+#[cfg(feature = "csv")]
 impl From<std::io::Error> for CsvError {
     fn from(value: std::io::Error) -> Self {
         Self::Io(value)
     }
 }
 
+#[cfg(feature = "csv")]
 impl From<csv::Error> for CsvError {
     fn from(value: csv::Error) -> Self {
         Self::Csv(value)
@@ -96,6 +120,7 @@ pub fn detect_price_scale(rows: &[[String; 4]]) -> f64 {
     }
 }
 
+#[cfg(feature = "csv")]
 pub(crate) fn column_index(
     header: &csv::StringRecord,
     name: &'static str,
@@ -112,6 +137,7 @@ pub(crate) fn column_index(
 /// Returns [`CsvError`] when the file cannot be read, is empty, lacks a
 /// required `time/open/high/low/close` column, or contains an unparseable
 /// numeric cell.
+#[cfg(feature = "csv")]
 pub fn read_tradingview_csv(path: &Path) -> Result<(Vec<Bar>, f64), CsvError> {
     let mut reader = csv::ReaderBuilder::new().flexible(true).from_path(path)?;
     let header = reader.headers()?.clone();

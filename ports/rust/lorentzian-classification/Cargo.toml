@@ -1,0 +1,26 @@
+[package]
+name = "lorentzian-classification"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "Lorentzian Classification indicator for Rust: alias crate re-exporting lorentzian-classification-core"
+documentation = "https://docs.rs/lorentzian-classification"
+readme = "README.md"
+keywords = ["trading", "indicator", "machine-learning", "lorentzian", "pinescript"]
+categories = ["algorithms", "finance"]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+# Mirrors the core crate's feature: TradingView CSV input and Pine-export
+# parity checking. Disable default features for the zero-dependency core.
+default = ["csv"]
+csv = ["lorentzian-classification-core/csv"]
+
+[dependencies]
+lorentzian-classification-core.workspace = true
