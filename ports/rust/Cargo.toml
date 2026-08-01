@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "lorentzian-classification-core",
+    "lorentzian-classification",
     "lorentzian-classification-cli",
 ]
 
@@ -12,11 +13,14 @@ edition = "2021"
 rust-version = "1.77"
 license = "MIT"
 repository = "https://github.com/artificial-intelligence-edge/lorentzian-classification"
+homepage = "https://github.com/artificial-intelligence-edge/lorentzian-classification"
 authors = ["AI Edge"]
 description = "Rust port of the Lorentzian Classification indicator, bit-faithful to the PineScript reference"
 
 [workspace.dependencies]
-lorentzian-classification-core = { path = "lorentzian-classification-core" }
+# `version` makes the dependency publishable: cargo strips `path` when
+# packaging, leaving the crates.io version requirement.
+lorentzian-classification-core = { path = "lorentzian-classification-core", version = "0.1.0", default-features = false }
 csv = "1.3"
 
 [profile.release]

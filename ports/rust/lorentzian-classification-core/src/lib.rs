@@ -6,12 +6,19 @@
 //! [`f64::NAN`] ([`MISSING`]).
 //!
 //! The implementation is deliberately allocation-simple and dependency-light so
-//! it stays easy to audit against the reference. CSV parsing uses the established
-//! `csv` crate so valid quoted CSV behaves like Python's standard `csv` parser.
-//! Floating-point operations mirror the Python port's accumulation order and rounding
-//! (banker's rounding via [`f64::round_ties_even`], libm `powf`/`exp`), which
-//! makes the two ports bit-for-bit equal and keeps the crate within `1e-6` of
-//! the TradingView gold baselines.
+//! it stays easy to audit against the reference. Floating-point operations
+//! mirror the Python port's accumulation order and rounding (banker's rounding
+//! via [`f64::round_ties_even`], libm `powf`/`exp`), which makes the two ports
+//! bit-for-bit equal and keeps the crate within `1e-6` of the TradingView gold
+//! baselines.
+//!
+//! # Cargo features
+//!
+//! * **`csv`** (default): TradingView CSV input ([`read_tradingview_csv`]) and
+//!   Pine-export parity checking (the [`parity`] module), via the established
+//!   `csv` crate so valid quoted CSV behaves like Python's standard `csv`
+//!   parser. Disable it (`default-features = false`) for a zero-dependency
+//!   numeric core when you feed [`Bar`] values from your own data pipeline.
 //!
 //! # Example
 //! ```
@@ -28,6 +35,8 @@
 //! ```
 
 #![forbid(unsafe_code)]
+// Published crate: every public item must be documented.
+#![deny(missing_docs)]
 #![warn(clippy::pedantic)]
 // Numeric casts are pervasive in this index-heavy numeric port and are always
 // within range for realistic bar counts; flagging each one adds noise.
@@ -56,12 +65,16 @@ pub mod engine;
 pub mod filters;
 pub mod indicators;
 pub mod kernels;
+#[cfg(feature = "csv")]
 pub mod parity;
 pub mod types;
 
 pub use ann::AnnState;
-pub use csv_io::{detect_price_scale, read_tradingview_csv, CsvError};
+pub use csv_io::detect_price_scale;
+#[cfg(feature = "csv")]
+pub use csv_io::{read_tradingview_csv, CsvError};
 pub use engine::{calculate, select_source};
+#[cfg(feature = "csv")]
 pub use parity::{parity_summary, read_pine_export, ExpectedRow, Mismatch, ParitySummary};
 pub use types::{
     is_missing, nz, Bar, FeatureKind, FeatureSpec, ParseError, ResultRow, Settings, Source,

@@ -24,6 +24,7 @@
   <a href="ports/pinescript/"><img alt="PineScript v6 port" src="https://img.shields.io/badge/PineScript%20v6-%E2%9C%93-2E7D32?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyTDE1IDdMMTMuNSA3TDE3IDEyTDE1IDEyTDE5IDE4TDEzLjUgMThMMTMuNSAyMkwxMC41IDIyTDEwLjUgMThMNSAxOEw5IDEyTDcgMTJMMTAuNSA3TDkgN1oiLz48L3N2Zz4%3D&logoColor=white&labelColor=4A4A4A"></a>
   <a href="ports/python/"><img alt="Python port" src="https://img.shields.io/badge/Python-%E2%9C%93-2E7D32?style=flat-square&logo=python&logoColor=white&labelColor=4A4A4A"></a>
   <a href="ports/rust/"><img alt="Rust port" src="https://img.shields.io/badge/Rust-%E2%9C%93-2E7D32?style=flat-square&logo=rust&logoColor=white&labelColor=4A4A4A"></a>
+  <a href="https://crates.io/crates/lorentzian-classification-core"><img alt="crates.io" src="https://img.shields.io/crates/v/lorentzian-classification-core?style=flat-square&logo=rust&logoColor=white&labelColor=4A4A4A&label=crates.io"></a>
   <a href="ports/lean/"><img alt="Lean 4 port" src="https://img.shields.io/badge/Lean%204-%E2%9C%93-2E7D32?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJ3aGl0ZSI%2BPHBhdGggZD0iTTU1IDQ0aDEwdjY0aDM4djEwSDU1Wk0xNTEgNDRoNDh2MTBoLTQ4Wk0xNjEgNzRoMzh2MTBoLTM4Wk0xNTEgMTEyaDQ4djEwaC00OFpNMTg5IDQ0aDEwdjc4aC0xMFpNNTUgMTM5aDEwbDIyIDcyaC0xMFpNMTA5IDEzOWgxMGwtMjIgNzJoLTEwWk02MyAxNjZoNDJ2OUg2M1pNMTQzIDEzOWgxMHY3MmgtMTBaTTE5MCAxMzloMTB2NzJoLTEwWk0xNTIgMTM5aDhsMzggNzJoLTlaIi8%2BPC9zdmc%2B&logoColor=white&labelColor=4A4A4A"></a>
   <a href="ports/mql5/"><img alt="MQL5 port" src="docs/assets/mql5-badge.svg"></a>
 </p>
@@ -70,7 +71,7 @@ testing.
 | PineScript v6 | TradingView users who want the original chart indicator | [Open on TradingView](https://www.tradingview.com/script/WhBzgfDu-Machine-Learning-Lorentzian-Classification/) |
 | MQL5 | MetaTrader 5 users who want the indicator plus a Strategy Tester EA | [`ports/mql5/`](ports/mql5/) |
 | Python | Research workflows, CSV exports, notebooks, and the quickest local smoke test | [`ports/python/`](ports/python/) |
-| Rust | Fast local testing, dependency-light library usage, and performance-focused experiments | [`ports/rust/`](ports/rust/) |
+| Rust | Fast local testing, dependency-light library usage, and performance-focused experiments | [`ports/rust/`](ports/rust/) or `cargo add lorentzian-classification-core` |
 | Lean 4 | An executable formal specification with stated and tested invariants | [`ports/lean/`](ports/lean/) |
 
 Need another ecosystem? [Request a new port](https://github.com/artificial-intelligence-edge/lorentzian-classification/issues/new?template=port-request.yml).
