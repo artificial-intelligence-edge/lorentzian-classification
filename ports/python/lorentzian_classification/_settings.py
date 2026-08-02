@@ -3,31 +3,21 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import fields
 
-from .core import Settings
-from ._types import (
-    BOOLEAN_SETTING_FIELDS,
-    FEATURE_SLOTS,
-    FEATURE_TYPES,
-    FLOAT_SETTING_FIELDS,
-    INTEGER_SETTING_FIELDS,
-    PINE_SETTING_BOUNDS,
+from .settings import (
     VALID_SOURCES,
+    Settings,
+    coerce_feature,
+    parse_feature_string,
+    validate_settings,
 )
 
 
 def parse_feature(value: str) -> tuple[str, int, int]:
-    parts = value.split(":")
-    if len(parts) != 3:
-        raise argparse.ArgumentTypeError("feature must have form TYPE:PARAM_A:PARAM_B, e.g. RSI:14:1")
-    kind = parts[0].upper()
-    if kind not in FEATURE_TYPES:
-        raise argparse.ArgumentTypeError("feature type must be one of RSI, WT, CCI, ADX")
     try:
-        return kind, int(parts[1]), int(parts[2])
+        return parse_feature_string(value)
     except ValueError as exc:
-        raise argparse.ArgumentTypeError("feature params must be integers") from exc
+        raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
 def bounded_int(name: str, minimum: int | None = None, maximum: int | None = None):
@@ -60,75 +50,10 @@ def bounded_float(name: str, minimum: float | None = None, maximum: float | None
     return parse
 
 
-def is_strict_int(value: object) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool)
-
-
-def coerce_feature(value: object, key: str) -> tuple[str, int, int]:
-    if isinstance(value, str):
-        try:
-            return parse_feature(value)
-        except argparse.ArgumentTypeError as exc:
-            raise ValueError(f"{key}: {exc}") from exc
-    if isinstance(value, list | tuple) and len(value) == 3:
-        kind = str(value[0]).upper()
-        if kind not in FEATURE_TYPES:
-            raise ValueError(f"{key}: feature type must be one of RSI, WT, CCI, ADX")
-        if not is_strict_int(value[1]) or not is_strict_int(value[2]):
-            raise ValueError(f"{key}: feature params must be integers")
-        return kind, value[1], value[2]
-    raise ValueError(f"{key}: feature must be a TYPE:PARAM_A:PARAM_B string or 3-item list")
-
-
-def validate_settings(settings: Settings) -> Settings:
-    for key in BOOLEAN_SETTING_FIELDS:
-        if not isinstance(getattr(settings, key), bool):
-            raise ValueError(f"{key}: must be a boolean")
-
-    for key in INTEGER_SETTING_FIELDS:
-        if not is_strict_int(getattr(settings, key)):
-            raise ValueError(f"{key}: must be an integer")
-
-    for key in FLOAT_SETTING_FIELDS:
-        value = getattr(settings, key)
-        if isinstance(value, bool) or not isinstance(value, int | float):
-            raise ValueError(f"{key}: must be a number")
-
-    if not isinstance(settings.source, str):
-        raise ValueError("source: must be a string")
-    if settings.source not in VALID_SOURCES:
-        raise ValueError(f"source: must be one of {', '.join(VALID_SOURCES)}")
-
-    for key, (minimum, maximum) in PINE_SETTING_BOUNDS.items():
-        value = getattr(settings, key)
-        if minimum is not None and value < minimum:
-            raise ValueError(f"{key}: must be >= {minimum:g}")
-        if maximum is not None and value > maximum:
-            raise ValueError(f"{key}: must be <= {maximum:g}")
-
-    for key in FEATURE_SLOTS:
-        feature = getattr(settings, key)
-        if not isinstance(feature, tuple | list) or len(feature) != 3:
-            raise ValueError(f"{key}: feature must be a 3-item tuple")
-        kind, param_a, param_b = feature
-        if kind not in FEATURE_TYPES:
-            raise ValueError(f"{key}: feature type must be one of RSI, WT, CCI, ADX")
-        if not is_strict_int(param_a) or not is_strict_int(param_b):
-            raise ValueError(f"{key}: feature params must be integers")
-
-    return settings
-
-
 def settings_from_mapping(overrides: dict[str, object]) -> Settings:
-    field_names = {field.name for field in fields(Settings)}
-    unknown = sorted(set(overrides) - field_names)
-    if unknown:
-        raise ValueError(f"unknown settings keys: {', '.join(unknown)}")
+    """Backward-compatible wrapper for the public mapping constructor."""
 
-    values = {field.name: getattr(Settings(), field.name) for field in fields(Settings)}
-    for key, value in overrides.items():
-        values[key] = coerce_feature(value, key) if key in {"f1", "f2", "f3", "f4", "f5"} else value
-    return validate_settings(Settings(**values))
+    return Settings.from_mapping(overrides)
 
 
 def add_settings_args(parser: argparse.ArgumentParser) -> None:

@@ -13,6 +13,8 @@ import math
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from .settings import Settings
+
 
 MISSING = math.nan
 
@@ -64,46 +66,6 @@ class TvRow:
     win_loss_ratio: float | None = None
     table_wl_ratio: float | None = None
     win_rate: float | None = None
-
-
-@dataclass(frozen=True)
-class Settings:
-    source: str = "close"
-    neighbors_count: int = 8
-    max_bars_back: int = 2000
-    feature_count: int = 5
-    color_compression: int = 1
-    include_full_history: bool = False
-    use_volatility_filter: bool = True
-    use_regime_filter: bool = True
-    use_adx_filter: bool = False
-    regime_threshold: float = -0.1
-    adx_threshold: int = 20
-    use_ema_filter: bool = False
-    ema_period: int = 200
-    use_sma_filter: bool = False
-    sma_period: int = 200
-    use_kernel_filter: bool = True
-    use_kernel_smoothing: bool = False
-    use_dynamic_exits: bool = False
-    show_exits: bool = False
-    use_worst_case: bool = False
-    kernel_h: int = 8
-    kernel_r: float = 8.0
-    kernel_x: int = 25
-    kernel_lag: int = 2
-    show_kernel_estimate: bool = True
-    show_bar_colors: bool = True
-    show_bar_predictions: bool = True
-    use_atr_offset: bool = True
-    bar_predictions_offset: float = 0.0
-    use_confidence_gradient: bool = True
-    show_trade_stats: bool = True
-    f1: tuple[str, int, int] = ("RSI", 14, 1)
-    f2: tuple[str, int, int] = ("WT", 10, 11)
-    f3: tuple[str, int, int] = ("CCI", 20, 1)
-    f4: tuple[str, int, int] = ("ADX", 20, 2)
-    f5: tuple[str, int, int] = ("RSI", 9, 1)
 
 
 @dataclass(frozen=True)

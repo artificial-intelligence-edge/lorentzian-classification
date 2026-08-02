@@ -565,6 +565,51 @@ class PythonPortParityTest(unittest.TestCase):
         self.assertEqual(model.latest, expected[-1])
         self.assertEqual(model.data, expected)
 
+    def test_library_settings_from_mapping_matches_issue_example(self) -> None:
+        settings = Settings.from_mapping(
+            {
+                "source": "close",
+                "neighbors_count": 12,
+                "max_bars_back": 1000,
+                "use_adx_filter": True,
+                "f1": "RSI:14:1",
+                "f2": "WT:10:11",
+                "f3": "CCI:20:1",
+                "f4": "ADX:20:2",
+                "f5": "RSI:9:1",
+            }
+        )
+
+        self.assertEqual(settings.neighbors_count, 12)
+        self.assertEqual(settings.max_bars_back, 1000)
+        self.assertTrue(settings.use_adx_filter)
+        self.assertEqual(settings.f1, ("RSI", 14, 1))
+        self.assertEqual(settings.f2, ("WT", 10, 11))
+        self.assertEqual(settings.f3, ("CCI", 20, 1))
+        self.assertEqual(settings.f4, ("ADX", 20, 2))
+        self.assertEqual(settings.f5, ("RSI", 9, 1))
+        self.assertEqual(settings.to_mapping()["neighbors_count"], 12)
+
+        input_path = self.fixture_dir / "pine_coinbase_btcusd_1d_limited_history.csv"
+        model = LorentzianClassification(input_path, settings=settings)
+        self.assertIs(model.settings, settings)
+        self.assertEqual(len(model.results), 4155)
+
+    def test_library_settings_validate_at_construction(self) -> None:
+        invalid_settings = [
+            ({"source": "median"}, "source: must be one of"),
+            ({"neighbors_count": 0}, "neighbors_count: must be >= 1"),
+            ({"include_full_history": "true"}, "include_full_history: must be a boolean"),
+            ({"f1": ("UNKNOWN", 14, 1)}, "f1: feature type must be one of"),
+        ]
+        for overrides, message in invalid_settings:
+            with self.subTest(overrides=overrides):
+                with self.assertRaisesRegex(ValueError, message):
+                    Settings(**overrides)
+
+        with self.assertRaisesRegex(ValueError, "unknown settings keys: neighbor_count"):
+            Settings.from_mapping({"neighbor_count": 12})
+
     def test_library_wrapper_accepts_mapping_records_and_dataframe_like_input(self) -> None:
         input_path = self.fixture_dir / "pine_coinbase_btcusd_1d_limited_history.csv"
         with input_path.open(newline="") as handle:
@@ -618,6 +663,7 @@ class PythonPortParityTest(unittest.TestCase):
         expected_exports = {
             "LorentzianClassification",
             "RESULT_FIELDNAMES",
+            "Settings",
             "calculate",
             "read_tradingview_csv",
             "rows_from_records",
@@ -626,11 +672,24 @@ class PythonPortParityTest(unittest.TestCase):
         }
         self.assertTrue(expected_exports.issubset(set(package.__all__)))
         self.assertIs(package.LorentzianClassification, LorentzianClassification)
+        self.assertIs(package.Settings, Settings)
         self.assertTrue((PYTHON_PORT / "lorentzian_classification" / "py.typed").is_file())
 
         pyproject = tomllib.loads((PYTHON_PORT / "pyproject.toml").read_text())
         self.assertEqual(pyproject["project"]["optional-dependencies"]["dataframe"], ["pandas>=2"])
         self.assertIn("py.typed", pyproject["tool"]["setuptools"]["package-data"]["lorentzian_classification"])
+
+    def test_python_readme_documents_validated_library_settings(self) -> None:
+        readme = (PYTHON_PORT / "README.md").read_text()
+
+        self.assertIn("Settings.from_mapping({", readme)
+        self.assertIn('neighbors_count=12', readme)
+        self.assertIn('f1=("RSI", 14, 1)', readme)
+        self.assertIn('"f1": "RSI:14:1"', readme)
+        self.assertIn("Direct `Settings(...)` construction uses the same", readme)
+        self.assertIn("Reserved for tuple compatibility", readme)
+        for field in fields(Settings):
+            self.assertIn(f"`{field.name}`", readme)
 
     def test_cli_run_rejects_header_only_input(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
