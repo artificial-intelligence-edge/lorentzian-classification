@@ -6,11 +6,11 @@
 A bit-faithful Rust port of the Lorentzian Classification indicator, structured
 as a Cargo workspace:
 
-| Crate | Purpose |
-| --- | --- |
-| [`lorentzian-classification-core`](lorentzian-classification-core/) | The algorithm as a library. Zero dependencies with default features off; the default `csv` feature adds TradingView CSV input and Pine-export parity checking. |
-| [`lorentzian-classification`](lorentzian-classification/) | Alias crate re-exporting the core under the canonical name. |
-| [`lorentzian-classification-cli`](lorentzian-classification-cli/) | A thin command-line front end (`run`, `parity`). |
+| Crate | Published package | Purpose |
+| --- | --- | --- |
+| [`lorentzian-classification-core`](lorentzian-classification-core/) | [crates.io](https://crates.io/crates/lorentzian-classification-core) · [docs.rs](https://docs.rs/lorentzian-classification-core) | The algorithm as a library. Zero dependencies with default features off; the default `csv` feature adds TradingView CSV input and Pine-export parity checking. |
+| [`lorentzian-classification`](lorentzian-classification/) | [crates.io](https://crates.io/crates/lorentzian-classification) · [docs.rs](https://docs.rs/lorentzian-classification) | Alias crate re-exporting the core under the canonical name. |
+| [`lorentzian-classification-cli`](lorentzian-classification-cli/) | [crates.io](https://crates.io/crates/lorentzian-classification-cli) | A thin command-line front end (`run`, `parity`). |
 
 The port is a statement-for-statement translation of the PineScript v6 reference
 and the parity-tested Python port (`ports/python`). Series are forward-indexed
@@ -18,9 +18,13 @@ and the parity-tested Python port (`ports/python`). Series are forward-indexed
 
 ## Using the published crates
 
+The current release is **0.1.0**, published August 1, 2026.
+
 ```bash
-cargo add lorentzian-classification-core   # library (or: lorentzian-classification)
-cargo install lorentzian-classification-cli   # CLI binary: lorentzian-classification
+cargo add lorentzian-classification-core@0.1.0       # library
+cargo add lorentzian-classification@0.1.0            # canonical alias
+cargo install lorentzian-classification-cli \
+  --version 0.1.0 --locked                            # CLI binary
 ```
 
 ```toml
@@ -35,10 +39,17 @@ consumer-facing quick start and the Pine-input-to-`Settings` mapping.
 
 ## Status
 
-**Implemented, parity-verified, and published.** The port reproduces the
+**Implemented, parity-verified, and published as version 0.1.0.** The port reproduces the
 TradingView/Pine gold exports in `tests/parity/baselines/` exactly, under the
 same contract used for the Python port (`1e-6` for features/kernel, exact for
 prediction/direction/buy/sell/stops). See [Validation](#validation).
+
+The published release was independently checked from fresh Cargo projects:
+both library names resolved and executed, the CLI installed from crates.io and
+passed its public `parity` command, and each downloaded registry archive was
+byte-identical to the locally validated `.crate` file. The repository's
+[release verification workflow](https://github.com/artificial-intelligence-edge/lorentzian-classification/actions/runs/30692324528)
+also passed on the published commit.
 
 ## Design
 
@@ -78,6 +89,14 @@ println!("last prediction: {}", rows.last().unwrap().prediction);
 ## CLI usage
 
 ```bash
+# Installed from crates.io:
+lorentzian-classification run \
+  "input.csv" "output.csv" --include-full-history
+
+lorentzian-classification parity \
+  "pine_export.csv" --include-full-history --tolerance 1e-6
+
+# Or run the same CLI from a repository checkout:
 # Compute the full 40-column result series.
 cargo run --release -p lorentzian-classification-cli -- \
   run "input.csv" "output.csv" --include-full-history
@@ -119,8 +138,14 @@ an implementation-independent comparator.
 
 ## Releasing
 
-Releases are tag-driven and published with crates.io Trusted Publishing (see
-`.github/workflows/release-rust.yml`):
+Version 0.1.0 was the required manual first publication. Future releases are
+designed to be tag-driven through crates.io Trusted Publishing (see
+`.github/workflows/release-rust.yml`). Before pushing the first `rust-v*` tag,
+configure each crate's Trusted Publisher with repository owner
+`artificial-intelligence-edge`, repository `lorentzian-classification`,
+workflow `release-rust.yml`, and no environment.
+
+For each subsequent release:
 
 1. Bump `workspace.package.version` in `Cargo.toml` and the
    `lorentzian-classification-core` entry under `workspace.dependencies`.

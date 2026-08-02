@@ -67,15 +67,42 @@ passing here establishes **Rust == Pine == Python** transitively.
 
 ```bash
 cd ports/rust
-cargo test --release --workspace                   # parity + unit tests
-cargo test --release --test parity -- --ignored    # 47k-bar BINANCE H1 baseline
+cargo test --release --workspace                   # four baselines + unit/doc/CLI tests
+cargo test -p lorentzian-classification-core --no-default-features
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all --check
+RUSTDOCFLAGS='-D warnings -D missing_docs' cargo doc --workspace --no-deps
+rustup run 1.77 cargo check --workspace --locked
 ```
 
 Verified results (tolerance `1e-6`): OANDA daily (6216 bars), TASTYFX daily
-(7988 bars), and COINBASE daily (4155 bars) reproduce exactly; the 47,246-bar
-BINANCE H1 intraday baseline reproduces exactly at `include_full_history=false`.
+(7988 bars), COINBASE daily (4155 bars), and the trimmed BTCUSD H1 window
+(2063 bars) reproduce exactly. The larger baselines remain in the monorepo;
+the BTCUSD H1 fixture is also vendored into the core crate so the extracted
+package retains a standalone parity test.
+
+### Published 0.1.0 artifact verification
+
+The August 1, 2026 crates.io release was verified at the distribution boundary:
+
+- fresh Cargo projects resolved and executed both
+  [`lorentzian-classification-core`](https://crates.io/crates/lorentzian-classification-core)
+  and the canonical [`lorentzian-classification`](https://crates.io/crates/lorentzian-classification) alias;
+- `cargo install lorentzian-classification-cli --version 0.1.0 --locked`
+  succeeded from crates.io, and the installed binary passed `parity` against
+  the committed BTCUSD H1 baseline;
+- the downloaded crates.io archives for all three packages were byte-identical
+  to the locally validated `.crate` archives; and
+- the tag-independent
+  [release verification workflow](https://github.com/artificial-intelligence-edge/lorentzian-classification/actions/runs/30692324528)
+  passed on commit `f513f9f`.
+
+The core and alias API documentation built successfully on docs.rs:
+[`lorentzian-classification-core`](https://docs.rs/lorentzian-classification-core)
+and [`lorentzian-classification`](https://docs.rs/lorentzian-classification).
+The CLI is intentionally binary-only, so its supported documentation surfaces
+are its crates.io README and `lorentzian-classification --help`, not a rustdoc
+library target.
 
 ## Lean Port
 

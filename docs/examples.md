@@ -64,6 +64,20 @@ DataFrame-like object with `to_dict("records")`. See the Library API section of
 
 ## 3. Same answer, compiled speed (Rust)
 
+Install the published 0.1.0 CLI and run it directly:
+
+```bash
+cargo install lorentzian-classification-cli --version 0.1.0 --locked
+lorentzian-classification run \
+  tests/parity/baselines/pine_oanda_eurusd_1d_full_history.csv \
+  /tmp/eurusd_rust.csv --include-full-history
+```
+
+Library consumers can start with `cargo add lorentzian-classification-core`;
+the [core API documentation](https://docs.rs/lorentzian-classification-core)
+includes examples for direct `Bar` input and TradingView CSVs. To run the CLI
+from a repository checkout instead:
+
 ```bash
 cargo run --release \
   --manifest-path ports/rust/Cargo.toml -p lorentzian-classification-cli -- \
@@ -73,6 +87,8 @@ cargo run --release \
 
 The Rust port is bit-exact with the Python port: not "close", identical to
 the last bit of every float (banker's rounding and libm-matched `powf`/`exp`).
+The crates.io release was also tested from fresh downstream projects rather
+than relying only on the monorepo workspace.
 
 ## 4. Same answer, formally specified (Lean 4)
 
