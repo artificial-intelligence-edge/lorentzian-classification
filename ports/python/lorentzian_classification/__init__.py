@@ -5,7 +5,6 @@ from .core import (
     Bar,
     LorentzianClassification,
     ResultRow,
-    Settings,
     TvRow,
     calculate,
     coerce_input_rows,
@@ -14,6 +13,7 @@ from .core import (
     rows_from_records,
     write_result_csv,
 )
+from .settings import Settings
 
 __version__ = "0.1.0"
 
