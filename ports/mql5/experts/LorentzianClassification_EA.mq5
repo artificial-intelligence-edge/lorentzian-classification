@@ -11,7 +11,7 @@
 //+------------------------------------------------------------------+
 #property copyright   "AI Edge"
 #property link        "https://ai-edge.io/"
-#property version     "1.00"
+#property version     "1.01"
 #property description "Thin EA wrapper for the Lorentzian Classification indicator."
 #property description "Trades the indicator's Buy/Sell arrows and Exit signals; optional SL/TP."
 // Embed the compiled indicator so the EA .ex5 is self-contained (fresh
@@ -92,6 +92,10 @@ input bool   InpShowBarPreds  = true;  // Show Bar Prediction Values: integer pr
 input bool   InpUseAtrOffset  = false; // Use ATR Offset: ATR offset instead of prediction offset
 input double InpBarPredOffset  = 0;     // Bar Prediction Offset: % offset from the bar high/low
 
+input group "=== Alert Settings ==="
+input bool   InpEnableSignalAlerts      = false; // Enable Signal Alerts: terminal alert on a confirmed Buy/Sell signal
+input bool   InpEnablePushNotifications = false; // Enable Push Notifications: also send to configured MetaQuotes IDs
+
 // =====================================================================
 // Globals
 // =====================================================================
@@ -151,7 +155,9 @@ int OnInit()
       InpF5Type, InpF5ParamA, InpF5ParamB,
       // Display
       InpShowBarColors, InpShowBarPreds,
-      InpUseAtrOffset, InpBarPredOffset
+      InpUseAtrOffset, InpBarPredOffset,
+      // Alerts (trailing inputs preserve the original positional mapping)
+      InpEnableSignalAlerts, InpEnablePushNotifications
    );
 
    if(g_indHandle == INVALID_HANDLE)
