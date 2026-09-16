@@ -48,7 +48,7 @@ string BuildSignalAlertMessage(const ENUM_LC_SIGNAL_DIRECTION direction,
                                const int digits)
 {
    string directionText = direction == LC_SIGNAL_BUY ? "BUY" : "SELL";
-   return StringFormat("Lorentzian Classification %s | %s | %s | %s | Close: %s",
+   return StringFormat("LDC %s | %s | %s | %s | Close: %s",
                        directionText,
                        symbol,
                        SignalAlertTimeframe(timeframe),
@@ -103,14 +103,14 @@ bool DispatchConfirmedSignalAlert(SignalAlertState &state,
 
    string message = BuildSignalAlertMessage(direction, _Symbol, _Period,
                                             signalBarTime, closePrice, _Digits);
-   Print("Lorentzian Classification signal event: ", message);
+   Print("LDC signal event: ", message);
 
    // MetaTrader documents all external notification functions as unavailable
    // in Strategy Tester. Keep the event visible in its Journal without
    // implying that a terminal alert or push was delivered there.
    if((bool)MQLInfoInteger(MQL_TESTER))
    {
-      Print("Lorentzian Classification: terminal and push alerts are not delivered in Strategy Tester.");
+      Print("LDC: terminal and push alerts are not delivered in Strategy Tester.");
       return true;
    }
 
@@ -120,13 +120,13 @@ bool DispatchConfirmedSignalAlert(SignalAlertState &state,
    {
       if(!(bool)TerminalInfoInteger(TERMINAL_NOTIFICATIONS_ENABLED))
       {
-         Print("Lorentzian Classification: push notification skipped because terminal notifications are not configured or enabled.");
+         Print("LDC: push notification skipped because terminal notifications are not configured or enabled.");
       }
       else
       {
          ResetLastError();
          if(!SendNotification(message))
-            PrintFormat("Lorentzian Classification: SendNotification failed with error %d.",
+            PrintFormat("LDC: SendNotification failed with error %d.",
                         GetLastError());
       }
    }

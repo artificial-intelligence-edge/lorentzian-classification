@@ -166,11 +166,11 @@ symbol, a terminal that was offline, or a broker backfill -- the arrows and buff
 for every one of those bars, but only the newest confirmed signal raises an alert. Read the chart
 markers, not the alert log, when reconstructing what happened across a gap.
 
-Messages include the indicator name, direction, symbol, timeframe, confirmed signal-bar time, and
-closing price. For example:
+Messages are prefixed `LDC`, matching the PineScript port's alert messages, and include the
+direction, symbol, timeframe, confirmed signal-bar time, and closing price. For example:
 
 ```text
-Lorentzian Classification BUY | EURUSD | H4 | 2026.08.22 12:00 | Close: 1.12345
+LDC BUY | EURUSD | H4 | 2026.08.22 12:00 | Close: 1.12345
 ```
 
 To enable terminal alerts, set **Enable Signal Alerts** to `true` in the indicator or mirrored EA

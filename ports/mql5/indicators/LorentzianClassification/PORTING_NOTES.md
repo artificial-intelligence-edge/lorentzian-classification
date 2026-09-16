@@ -90,6 +90,11 @@ directly as `int limit = 1 + startAtBar;` and then
 
 ### `LorentzianClassification.mq5` ↔ `LorentzianClassification.pine`
 
+Pine line numbers below refer to the v1 source this port was written against,
+archived at `ports/pinescript/archive/lorentzian-classification-v1-020823-2301.pine`
+(562 lines). They are not line numbers in `ports/pinescript/lorentzian-classification-v2.pine`,
+where the same sections sit lower in the file.
+
 | Pine section | Pine lines | MQL5 location |
 |---|---|---|
 | Background (Euclidean vs Lorentzian) | 10-106 | File header block in `.mq5` |
