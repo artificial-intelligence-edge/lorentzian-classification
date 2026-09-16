@@ -160,6 +160,12 @@ The indicator also suppresses all historical events during initial attachment, p
 recompilation, chart refreshes, and any full history recalculation. Repeated ticks and repeated
 `OnCalculate()` calls are deduplicated by direction and signal-bar timestamp.
 
+Only the newest closed bar is eligible, so alerts cover live signals rather than a backlog. If
+several bars close between two `OnCalculate()` calls -- a weekend or session gap, an illiquid
+symbol, a terminal that was offline, or a broker backfill -- the arrows and buffers still populate
+for every one of those bars, but only the newest confirmed signal raises an alert. Read the chart
+markers, not the alert log, when reconstructing what happened across a gap.
+
 Messages include the indicator name, direction, symbol, timeframe, confirmed signal-bar time, and
 closing price. For example:
 
