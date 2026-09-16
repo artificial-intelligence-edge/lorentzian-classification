@@ -64,7 +64,7 @@
 //
 #property copyright   "AI Edge"
 #property link        "https://ai-edge.io/"
-#property version     "1.00"
+#property version     "1.01"
 #property description "ML-based indicator using Lorentzian distance with greedy ANN neighbor selection."
 #property indicator_chart_window
 #property indicator_buffers 13
@@ -114,6 +114,7 @@
 #include "Include/Filters.mqh"
 #include "Include/ANN.mqh"
 #include "Include/Backtest.mqh"
+#include "Include/SignalAlerts.mqh"
 
 // =====================================================================
 // ================
@@ -203,6 +204,12 @@ input bool   InpShowBarPreds      = true;  // Show Bar Prediction Values: intege
 input bool   InpUseAtrOffset      = false; // Use ATR Offset: ATR offset instead of prediction offset
 input double InpBarPredOffset     = 0;     // Bar Prediction Offset: % offset from the bar high/low
 
+// ===================== Alert Settings =====================
+// Appended after the original 45 inputs so existing positional iCustom()
+// callers continue to receive the same parameter mapping.
+input bool   InpEnableSignalAlerts       = false; // Enable Signal Alerts: terminal alert on a confirmed Buy/Sell signal
+input bool   InpEnablePushNotifications  = false; // Enable Push Notifications: also send to configured MetaQuotes IDs
+
 // =====================================================================
 // Indicator Buffers
 // =====================================================================
@@ -218,6 +225,7 @@ FeatureWork g_feat1, g_feat2, g_feat3, g_feat4, g_feat5;
 FilterState g_filters;
 ANNState    g_ann;
 BacktestState g_backtest;
+SignalAlertState g_signalAlerts;
 
 // Resolved source price array (based on InpSource)
 double g_src[];
@@ -326,6 +334,7 @@ int OnInit()
 
    InitANN(g_ann);
    InitBacktest(g_backtest);
+   ResetSignalAlertState(g_signalAlerts);
 
    IndicatorSetInteger(INDICATOR_DIGITS, _Digits);
    return INIT_SUCCEEDED;
@@ -371,6 +380,7 @@ int OnCalculate(const int rates_total,
    {
       InitANN(g_ann);
       InitBacktest(g_backtest);
+      ResetSignalAlertState(g_signalAlerts);
       InitFeatureWork(g_feat1, InpF1Type, InpF1ParamA, InpF1ParamB, MathPow(10, _Digits));
       InitFeatureWork(g_feat2, InpF2Type, InpF2ParamA, InpF2ParamB, MathPow(10, _Digits));
       InitFeatureWork(g_feat3, InpF3Type, InpF3ParamA, InpF3ParamB, MathPow(10, _Digits));
@@ -728,6 +738,11 @@ int OnCalculate(const int rates_total,
          ObjectSetInteger(0, bname, OBJPROP_COLOR, C'0,153,136');
          ObjectSetInteger(0, bname, OBJPROP_ANCHOR, ANCHOR_UPPER);
          ObjectSetInteger(0, bname, OBJPROP_SELECTABLE, false);
+         DispatchConfirmedSignalAlert(g_signalAlerts, LC_SIGNAL_BUY,
+                                      time[i], close[i],
+                                      InpEnableSignalAlerts,
+                                      InpEnablePushNotifications,
+                                      prev_calculated > 0 && i == rates_total - 2);
       }
       if(startShort)
       {
@@ -740,6 +755,11 @@ int OnCalculate(const int rates_total,
          ObjectSetInteger(0, sname, OBJPROP_COLOR, C'204,51,17');
          ObjectSetInteger(0, sname, OBJPROP_ANCHOR, ANCHOR_LOWER);
          ObjectSetInteger(0, sname, OBJPROP_SELECTABLE, false);
+         DispatchConfirmedSignalAlert(g_signalAlerts, LC_SIGNAL_SELL,
+                                      time[i], close[i],
+                                      InpEnableSignalAlerts,
+                                      InpEnablePushNotifications,
+                                      prev_calculated > 0 && i == rates_total - 2);
       }
       if(endLong  && InpShowExits)            ExitBuyBuf[i]  = high[i] + arrowOff;
       if(endShort && InpShowExits)            ExitSellBuf[i] = low[i]  - arrowOff;
