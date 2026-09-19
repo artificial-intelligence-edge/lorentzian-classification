@@ -25,6 +25,8 @@ Source files:
   - `Include/Filters.mqh`: volatility / regime / ADX / EMA / SMA filters
   - `Include/ANN.mqh`: greedy approximate nearest neighbors classifier
   - `Include/Backtest.mqh`: real-time trade stats
+  - `Include/SignalAlerts.mqh`: confirmed entry-alert formatting,
+    deduplication, terminal alerts, and optional mobile push delivery
 
 ---
 
@@ -88,6 +90,11 @@ directly as `int limit = 1 + startAtBar;` and then
 
 ### `LorentzianClassification.mq5` ↔ `LorentzianClassification.pine`
 
+Pine line numbers below refer to the v1 source this port was written against,
+archived at `ports/pinescript/archive/lorentzian-classification-v1-020823-2301.pine`
+(562 lines). They are not line numbers in `ports/pinescript/lorentzian-classification-v2.pine`,
+where the same sections sit lower in the file.
+
 | Pine section | Pine lines | MQL5 location |
 |---|---|---|
 | Background (Euclidean vs Lorentzian) | 10-106 | File header block in `.mq5` |
@@ -102,7 +109,7 @@ directly as `int limit = 1 + startAtBar;` and then
 | Kernel regression filters | 426-458 | "Kernel Regression Filters" block inside the bar loop |
 | Entries & exits | 459-484 | "Entries and Exits" block: `startLong`, `startShort`, `endLongStrict`, `endLongDynamic`, etc. |
 | Plotting labels | 486-494 | Signal buffer fills (`BuyBuf[i] = low[i]`, etc.) and post-loop label objects |
-| Alerts | 496-512 | Not ported (MQL5 consumers read the signal buffers directly) |
+| Alerts | 496-512 | Buy/Sell entry alerts use `DispatchConfirmedSignalAlert()` beside the signal-buffer writes; exit and kernel-color alerts remain a documented divergence below |
 | Display signals & bar coloring | 514-526 | "Display Signals" block using the color palette built in `OnInit` |
 | Backtesting stream & stats | 528-562 | `UpdateBacktest()` / `DrawStatsTable()` |
 
@@ -177,9 +184,28 @@ buffer; chart consumers read the `BuyBuf` / `SellBuf` / `ExitBuyBuf` /
 
 ---
 
+## Alert delivery semantics
+
+The PineScript reference exposes entry alert conditions for new long and short
+positions. The MQL5 port maps those entry events to `Alert()` and optionally
+`SendNotification()` without changing the signal conditions or buffer values.
+
+The alert path adds platform-specific safeguards:
+
+- Both delivery settings are disabled by default.
+- Only the newest fully closed bar is eligible for delivery.
+- A first calculation or any full recalculation emits no historical alerts.
+- Buy and Sell events are deduplicated independently by signal-bar timestamp.
+- Push configuration or delivery failures are written to the Journal and do
+  not interrupt indicator calculation.
+- MetaTrader does not deliver terminal or push alerts in Strategy Tester, so
+  delivery must be smoke-tested on a live, demo, or custom-symbol chart.
+
+---
+
 ## Divergences from the original
 
-The port is faithful to the algorithm but has two cosmetic differences
+The port is faithful to the algorithm but has two platform-level differences
 worth noting:
 
 1. **Bar-colour gradient midpoint.** PineScript's `color.from_gradient`
@@ -187,10 +213,10 @@ worth noting:
    in `OnInit` fades toward white instead, so low-magnitude predictions
    appear washed out rather than greyed out. The saturated endpoints
    (`#009988` teal and `#CC3311` red) are identical.
-2. **No alerts.** PineScript exposes `alertcondition(...)` for each event;
-   MQL5 consumers are expected to read the signal buffers from an EA or
-   to subscribe to `OnChartEvent` externally. Adding `Alert()` calls in
-   the indicator body would be straightforward if needed.
+2. **Entry alerts only.** Version 1.01 provides terminal and optional push
+   delivery for confirmed Buy and Sell entries. PineScript's close-position
+   and kernel color-change alert conditions are not exposed as MQL5 alert
+   controls.
 
 ---
 

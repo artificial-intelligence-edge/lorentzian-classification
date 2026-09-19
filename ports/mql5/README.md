@@ -140,7 +140,56 @@ Defaults: `RSI(14,1)` · `WT(10,11)` · `CCI(20,1)` · `ADX(20,2)` *(B unused)* 
 | **Use ATR Offset** | ✗ | Use an ATR-based offset instead of the bar-prediction offset. |
 | **Bar Prediction Offset** | 0 | Offset of bar predictions as a percentage of bar high/low (min 0). |
 
+### Alerts
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| **Enable Signal Alerts** | ✗ | Show one MetaTrader terminal alert when a new Buy or Sell entry signal is confirmed. |
+| **Enable Push Notifications** | ✗ | Also send the same message to the MetaQuotes IDs configured in MetaTrader. This setting is used only when Signal Alerts is enabled. |
+
 </details>
+
+## Confirmed signal alerts
+
+Signal alerts are opt-in and use the exact `startLong` and `startShort` events that populate the
+Buy and Sell indicator buffers. Enabling them does not change the classifier, filters, signal
+timing, chart markers, or Expert Advisor behavior.
+
+Each alert is emitted only when the signal bar has closed. The still-forming bar is never eligible.
+The indicator also suppresses all historical events during initial attachment, parameter changes,
+recompilation, chart refreshes, and any full history recalculation. Repeated ticks and repeated
+`OnCalculate()` calls are deduplicated by direction and signal-bar timestamp.
+
+Only the newest closed bar is eligible, so alerts cover live signals rather than a backlog. If
+several bars close between two `OnCalculate()` calls -- a weekend or session gap, an illiquid
+symbol, a terminal that was offline, or a broker backfill -- the arrows and buffers still populate
+for every one of those bars, but only the newest confirmed signal raises an alert. Read the chart
+markers, not the alert log, when reconstructing what happened across a gap.
+
+Messages are prefixed `LDC`, matching the PineScript port's alert messages, and include the
+direction, symbol, timeframe, confirmed signal-bar time, and closing price. For example:
+
+```text
+LDC BUY | EURUSD | H4 | 2026.08.22 12:00 | Close: 1.12345
+```
+
+To enable terminal alerts, set **Enable Signal Alerts** to `true` in the indicator or mirrored EA
+inputs. To additionally receive mobile push notifications:
+
+1. In MetaTrader 5, open **Tools > Options > Notifications**.
+2. Enable push notifications, enter the MetaQuotes ID shown in the MetaTrader mobile app, and use
+   MetaTrader's **Test** button to verify delivery.
+3. Set **Enable Push Notifications** to `true` in the indicator or EA inputs.
+
+If terminal push notifications are unavailable or a send fails, the indicator records the reason
+in the Journal and continues calculating normally. MetaQuotes documents the terminal setup in
+[Platform Settings](https://www.metatrader5.com/en/terminal/help/startworking/settings) and the
+API behavior and rate limits in [`SendNotification()`](https://www.mql5.com/en/docs/network/sendnotification).
+
+> [!NOTE]
+> MetaTrader does not execute [`Alert()`](https://www.mql5.com/en/docs/common/alert) or
+> `SendNotification()` in Strategy Tester. Use Strategy Tester to validate signal selection and
+> use a live, demo, or custom-symbol chart to validate terminal and mobile delivery.
 
 ## The Expert Advisor
 
@@ -195,7 +244,7 @@ back on TradingView.
 | Path | Contents |
 | --- | --- |
 | [`VERSION`](VERSION) | Canonical MQL5 release version shared by the indicator, EA, and binary-release tags. |
-| [`indicators/`](indicators/) | The MT5 `Indicators` payload: `LorentzianClassification.mq5` with its `Include/` headers (features, filters, kernels, ANN, trade stats) and `PORTING_NOTES.md`. |
+| [`indicators/`](indicators/) | The MT5 `Indicators` payload: `LorentzianClassification.mq5` with its `Include/` headers (features, filters, kernels, ANN, trade stats, and signal alerts) and `PORTING_NOTES.md`. |
 | [`experts/`](experts/) | The MT5 `Experts` payload: `LorentzianClassification_EA.mq5`, a thin EA wrapper that loads the indicator via `iCustom` and trades its signals. |
 
 ## Binary releases
@@ -235,9 +284,10 @@ trade-weighted Sortino ratio.
 - **No `input group` lines in the indicator.** In MT5, an `input group` line
   consumes an `iCustom()` positional parameter slot, which would silently
   shift every EA-supplied input into the wrong parameter. The indicator uses
-  plain comments as section separators and exposes exactly 45 slots that
-  align 1:1 with the EA's `iCustom` call; keep them in sync when adding
-  inputs.
+  plain comments as section separators. Version 1.00's original 45 slots remain
+  unchanged, and the two version 1.01 alert controls are trailing slots 46 and
+  47. The EA passes all 47 in the same order; keep both sides synchronized when
+  adding inputs.
 - **Closed-bar processing.** Each bar is processed exactly once when it
   closes; the still-forming bar is deferred. Signals therefore persist on
   closed bars for `iCustom` readers and do not repaint.
